@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Поставщики — АвтоСервис{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Поставщики</h1>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('parts_list') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-box-seam"></i> Склад
+        </a>
+        <a href="{{ url_for('supplier_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Добавить поставщика
+        </a>
+    </div>
+</div>
+
+<div class="card stat-card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>Название</th>
+                <th>Контактное лицо</th>
+                <th>Телефон</th>
+                <th>Email</th>
+                <th class="text-end">Позиций</th>
+                <th class="text-end">Действия</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for s in suppliers %}
+                <tr>
+                    <td>{{ s.name }}</td>
+                    <td>{{ s.contact_person or "—" }}</td>
+                    <td>{{ s.phone or "—" }}</td>
+                    <td>{{ s.email or "—" }}</td>
+                    <td class="text-end"><span class="badge bg-secondary">{{ s.parts|length }}</span></td>
+                    <td class="text-end">
+                        <a href="{{ url_for('supplier_edit', supplier_id=s.id) }}"
+                           class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                        <form method="post" class="d-inline"
+                              action="{{ url_for('supplier_delete', supplier_id=s.id) }}"
+                              onsubmit="return confirm('Удалить поставщика?');">
+                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="text-center text-muted py-4">Поставщиков пока нет.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

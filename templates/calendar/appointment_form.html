@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Редактирование записи" if appt else "Новая запись" }} — АвтоСервис{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('calendar_view') }}">Календарь</a></li>
+        <li class="breadcrumb-item active">{{ "Редактирование" if appt else "Новая запись" }}</li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-4">{{ "Запись №" ~ appt.id if appt else "Новая запись" }}</h1>
+
+<div class="card stat-card">
+    <div class="card-body">
+        <form method="post" novalidate autocomplete="off">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Клиент <span class="text-danger">*</span></label>
+                    <select name="client_id" id="client-select" class="form-select" required>
+                        <option value="">— выберите клиента —</option>
+                        {% set cur_client = form.get('client_id', appt.client_id if appt else '')|string %}
+                        {% for c in clients %}
+                            <option value="{{ c.id }}"
+                                    {% if cur_client == c.id|string %}selected{% endif %}>
+                                {{ c.full_name }} ({{ c.phone }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Автомобиль</label>
+                    <select name="car_id" id="car-select" class="form-select">
+                        <option value="">— сначала выберите клиента —</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Дата <span class="text-danger">*</span></label>
+                    <input type="date" name="start_date" class="form-control" required
+                           value="{{ form.get('start_date', appt.start_at.strftime('%Y-%m-%d') if appt else '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Начало <span class="text-danger">*</span></label>
+                    <input type="time" name="start_time" class="form-control" required
+                           value="{{ form.get('start_time', appt.start_at.strftime('%H:%M') if appt else '09:00') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Окончание <span class="text-danger">*</span></label>
+                    <input type="time" name="end_time" class="form-control" required
+                           value="{{ form.get('end_time', appt.end_at.strftime('%H:%M') if appt else '10:00') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Статус</label>
+                    {% set cur_status = form.get('status', appt.status if appt else 'planned') %}
+                    <select name="status" class="form-select">
+                        {% for key, label in APPOINTMENT_STATUSES.items() %}
+                            <option value="{{ key }}" {% if cur_status == key %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Пост</label>
+                    {% set cur_post = form.get('post_id', appt.post_id if appt else '')|string %}
+                    <select name="post_id" class="form-select">
+                        <option value="">— не выбран —</option>
+                        {% for p in posts %}
+                            <option value="{{ p.id }}" {% if cur_post == p.id|string %}selected{% endif %}>
+                                {{ p.name }}{% if p.description %} — {{ p.description }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Мастер</label>
+                    {% set cur_master = form.get('master_id', appt.master_id if appt else '')|string %}
+                    <select name="master_id" class="form-select">
+                        <option value="">— не выбран —</option>
+                        {% for m in masters %}
+                            <option value="{{ m.id }}" {% if cur_master == m.id|string %}selected{% endif %}>
+                                {{ m.full_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Комментарий / жалобы клиента</label>
+                    <textarea name="comment" rows="3" class="form-control">{{ form.get('comment', appt.comment if appt and appt.comment else '') }}</textarea>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2"></i> Сохранить
+                </button>
+                <a href="{{ url_for('calendar_view') }}" class="btn btn-outline-secondary">Отмена</a>
+
+                {% if appt %}
+                    {% if appt.order_id %}
+                        <a href="{{ url_for('order_detail', order_id=appt.order_id) }}"
+                           class="btn btn-outline-primary ms-auto">
+                            <i class="bi bi-clipboard-check"></i> Открыть заказ-наряд №{{ appt.order_id }}
+                        </a>
+                    {% else %}
+                        <form method="post" action="{{ url_for('appointment_to_order', appt_id=appt.id) }}"
+                              class="ms-auto">
+                            <button class="btn btn-outline-primary"
+                                    onclick="return confirm('Создать заказ-наряд из этой записи?');">
+                                <i class="bi bi-clipboard-plus"></i> Создать заказ-наряд
+                            </button>
+                        </form>
+                    {% endif %}
+                    <form method="post" action="{{ url_for('appointment_delete', appt_id=appt.id) }}"
+                          onsubmit="return confirm('Удалить запись?');">
+                        <button class="btn btn-outline-danger"><i class="bi bi-trash"></i> Удалить</button>
+                    </form>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const clientSelect = document.getElementById('client-select');
+    const carSelect    = document.getElementById('car-select');
+    const preselectedCarId = "{{ form.get('car_id', appt.car_id if appt else '') }}";
+
+    function loadCars() {
+        const clientId = clientSelect.value;
+        if (!clientId) {
+            carSelect.innerHTML = '<option value="">— сначала выберите клиента —</option>';
+            return;
+        }
+        carSelect.innerHTML = '<option value="">— загрузка... —</option>';
+        fetch('/api/clients/' + clientId + '/cars')
+            .then(r => r.json())
+            .then(function (data) {
+                carSelect.innerHTML = '<option value="">— без автомобиля —</option>';
+                (data.cars || []).forEach(function (car) {
+                    const opt = document.createElement('option');
+                    opt.value = car.id;
+                    let label = car.title;
+                    if (car.plate) label += ' · ' + car.plate;
+                    opt.textContent = label;
+                    if (preselectedCarId && String(car.id) === String(preselectedCarId)) {
+                        opt.selected = true;
+                    }
+                    carSelect.appendChild(opt);
+                });
+            })
+            .catch(function () {
+                carSelect.innerHTML = '<option value="">— ошибка загрузки —</option>';
+            });
+    }
+
+    clientSelect.addEventListener('change', loadCars);
+    if (clientSelect.value) loadCars();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "base_print.html" %}
+{% block title %}Заказ-наряд №{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div class="company">
+        {% if s.logo_filename %}
+            <img class="logo" src="{{ url_for('uploads_file', filename=s.logo_filename) }}" alt="">
+        {% endif %}
+        <div>
+            <h2>{{ s.company_name or "АвтоСервис" }}</h2>
+            <div class="muted">
+                {% if s.legal_name %}{{ s.legal_name }}<br>{% endif %}
+                {% if s.address %}{{ s.address }}<br>{% endif %}
+                {% if s.phone %}Тел.: {{ s.phone }}{% endif %}
+                {% if s.email %} &middot; {{ s.email }}{% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="doc-title">
+        <h1>Заказ-наряд №{{ order.id }}</h1>
+        <div class="muted">от {{ order.created_at.strftime("%d.%m.%Y") }}</div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-title">Клиент</div>
+    <div class="kv">
+        <div>ФИО:</div><div>{{ order.client.full_name }}</div>
+        <div>Телефон:</div><div>{{ order.client.phone }}</div>
+        {% if order.client.email %}<div>Email:</div><div>{{ order.client.email }}</div>{% endif %}
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-title">Автомобиль</div>
+    <div class="kv">
+        <div>Марка, модель:</div><div>{{ order.car.brand }} {{ order.car.model }}</div>
+        {% if order.car.year %}<div>Год выпуска:</div><div>{{ order.car.year }}</div>{% endif %}
+        {% if order.car.plate %}<div>Госномер:</div><div>{{ order.car.plate }}</div>{% endif %}
+        {% if order.car.vin %}<div>VIN:</div><div>{{ order.car.vin }}</div>{% endif %}
+        {% if order.car.engine_volume %}<div>Двигатель:</div><div>{{ order.car.engine_volume }} л</div>{% endif %}
+        {% if order.car.transmission %}<div>КПП:</div><div>{{ order.car.transmission }}</div>{% endif %}
+        {% if order.intake_mileage is not none %}<div>Пробег при приёмке:</div><div>{{ order.intake_mileage }} км</div>{% endif %}
+    </div>
+</div>
+
+{% if order.complaint %}
+<div class="section">
+    <div class="section-title">Жалобы клиента</div>
+    <div>{{ order.complaint }}</div>
+</div>
+{% endif %}
+
+{% if order.works %}
+<div class="section">
+    <div class="section-title">Работы</div>
+    <table>
+        <thead>
+        <tr>
+            <th style="width:30px">#</th>
+            <th>Наименование</th>
+            <th>Мастер</th>
+            <th class="text-end" style="width:70px">Н/ч</th>
+            <th class="text-end" style="width:100px">Стоимость</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for w in order.works %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ w.name }}</td>
+                <td>{{ w.master or "" }}</td>
+                <td class="text-end">{{ "%.2f"|format(w.hours or 0) }}</td>
+                <td class="text-end">{{ "%.2f"|format(w.price or 0) }} ₽</td>
+            </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="4" class="text-end"><strong>Итого работы:</strong></td>
+            <td class="text-end"><strong>{{ "%.2f"|format(order.total_works) }} ₽</strong></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if order.parts %}
+<div class="section">
+    <div class="section-title">Запчасти и материалы</div>
+    <table>
+        <thead>
+        <tr>
+            <th style="width:30px">#</th>
+            <th>Наименование</th>
+            <th class="text-end" style="width:70px">Кол-во</th>
+            <th class="text-end" style="width:90px">Цена</th>
+            <th class="text-end" style="width:100px">Сумма</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for p in order.parts %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ p.name }}</td>
+                <td class="text-end">{{ "%.2f"|format(p.quantity or 0) }}</td>
+                <td class="text-end">{{ "%.2f"|format(p.price or 0) }} ₽</td>
+                <td class="text-end">{{ "%.2f"|format(p.total) }} ₽</td>
+            </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="4" class="text-end"><strong>Итого запчасти:</strong></td>
+            <td class="text-end"><strong>{{ "%.2f"|format(order.total_parts) }} ₽</strong></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="section">
+    <table style="border: none;">
+        <tr style="border: none;">
+            <td style="border: none;"></td>
+            <td style="border: none; width: 320px;">
+                <div style="border: 1px solid #444; padding: 8px 10px;">
+                    <div style="display:flex; justify-content: space-between;"><span>Работы:</span><strong>{{ "%.2f"|format(order.total_works) }} ₽</strong></div>
+                    <div style="display:flex; justify-content: space-between;"><span>Запчасти:</span><strong>{{ "%.2f"|format(order.total_parts) }} ₽</strong></div>
+                    <hr style="margin: 6px 0;">
+                    <div style="display:flex; justify-content: space-between; font-size: 14px;"><span>ИТОГО:</span><strong>{{ "%.2f"|format(order.total) }} ₽</strong></div>
+                    {% if s.vat_rate and s.vat_rate > 0 %}
+                        <div class="muted" style="font-size: 11px; margin-top: 4px;">
+                            В т.ч. НДС {{ "%.2f"|format(s.vat_rate) }}%
+                        </div>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="signatures">
+    <div style="flex:1">
+        <div>Клиент ______________________________</div>
+        <div class="muted" style="margin-top: 4px;">подпись / расшифровка</div>
+    </div>
+    <div style="flex:1">
+        <div>Принял ______________________________</div>
+        <div class="muted" style="margin-top: 4px;">мастер / приёмщик</div>
+    </div>
+</div>
+
+{% if s.footer_note %}
+    <div class="section muted" style="font-size: 11px;">{{ s.footer_note }}</div>
+{% endif %}
+{% endblock %}

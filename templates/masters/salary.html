@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Зарплата — {{ master.full_name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('masters_list') }}">Мастера</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('master_detail', master_id=master.id) }}">{{ master.full_name }}</a></li>
+        <li class="breadcrumb-item active">Зарплата</li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-4">Зарплата: {{ master.full_name }}</h1>
+
+<form method="get" class="card stat-card mb-4">
+    <div class="card-body row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small">С даты</label>
+            <input type="date" name="from" value="{{ date_from }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">По дату</label>
+            <input type="date" name="to" value="{{ date_to }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-sm btn-primary">Показать</button>
+        </div>
+    </div>
+</form>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card h-100"><div class="card-body">
+            <div class="text-muted small">Работ выполнено</div>
+            <div class="display-6">{{ totals.works_count }}</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card h-100"><div class="card-body">
+            <div class="text-muted small">Нормо-часы</div>
+            <div class="display-6">{{ "%.1f"|format(totals.hours_sum) }}</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card h-100"><div class="card-body">
+            <div class="text-muted small">Сумма работ, ₽</div>
+            <div class="display-6">{{ "%.0f"|format(totals.works_sum) }}</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card h-100 bg-light"><div class="card-body">
+            <div class="text-muted small">К выплате, ₽</div>
+            <div class="display-6 text-success">{{ "%.0f"|format(totals.total) }}</div>
+        </div></div>
+    </div>
+</div>
+
+<div class="card stat-card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between"><span>Оклад:</span><strong>{{ "%.2f"|format(totals.base) }} ₽</strong></div>
+        <div class="d-flex justify-content-between"><span>Процент ({{ "%.1f"|format(master.percent or 0) }}%):</span><strong>{{ "%.2f"|format(totals.bonus_percent) }} ₽</strong></div>
+        <div class="d-flex justify-content-between"><span>По ставке ({{ "%.0f"|format(master.hourly_rate or 0) }} ₽ × {{ "%.2f"|format(totals.hours_sum) }} н/ч):</span><strong>{{ "%.2f"|format(totals.hourly_part) }} ₽</strong></div>
+        <hr class="my-2">
+        <div class="d-flex justify-content-between"><span>Переменная часть (максимум из двух):</span><strong>{{ "%.2f"|format(totals.variable) }} ₽</strong></div>
+        <div class="d-flex justify-content-between fs-5"><span>Итого:</span><strong>{{ "%.2f"|format(totals.total) }} ₽</strong></div>
+    </div>
+</div>
+
+<div class="card stat-card">
+    <div class="card-header bg-white"><strong>Работы за период</strong></div>
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>Заказ</th>
+                <th>Дата</th>
+                <th>Работа</th>
+                <th class="text-end">Н/ч</th>
+                <th class="text-end">Стоимость</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for w in works %}
+                <tr>
+                    <td><a href="{{ url_for('order_detail', order_id=w.order_id) }}">#{{ w.order_id }}</a></td>
+                    <td>{{ w.order.created_at.strftime("%d.%m.%Y") }}</td>
+                    <td>{{ w.name }}</td>
+                    <td class="text-end">{{ "%.2f"|format(w.hours or 0) }}</td>
+                    <td class="text-end">{{ "%.2f"|format(w.price or 0) }} ₽</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5" class="text-center text-muted py-3">За этот период работ нет.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "base_print.html" %}
+{% block title %}Гарантийный талон — заказ №{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div class="company">
+        {% if s.logo_filename %}
+            <img class="logo" src="{{ url_for('uploads_file', filename=s.logo_filename) }}" alt="">
+        {% endif %}
+        <div>
+            <h2>{{ s.company_name or "АвтоСервис" }}</h2>
+            <div class="muted">
+                {% if s.legal_name %}{{ s.legal_name }}<br>{% endif %}
+                {% if s.address %}{{ s.address }}<br>{% endif %}
+                {% if s.phone %}Тел.: {{ s.phone }}{% endif %}
+                {% if s.email %} &middot; {{ s.email }}{% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="doc-title">
+        <h1>Гарантийный талон</h1>
+        <div class="muted">Заказ-наряд №{{ order.id }}<br>от {{ (order.closed_at or order.created_at).strftime("%d.%m.%Y") }}</div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="kv">
+        <div>Владелец (клиент):</div><div>{{ order.client.full_name }}</div>
+        <div>Телефон:</div><div>{{ order.client.phone }}</div>
+        <div>Автомобиль:</div>
+        <div>{{ order.car.brand }} {{ order.car.model }}{% if order.car.year %}, {{ order.car.year }}{% endif %}
+            {% if order.car.plate %} ({{ order.car.plate }}){% endif %}</div>
+        {% if order.car.vin %}<div>VIN:</div><div>{{ order.car.vin }}</div>{% endif %}
+        {% if order.intake_mileage is not none %}<div>Пробег при приёмке:</div><div>{{ order.intake_mileage }} км</div>{% endif %}
+    </div>
+</div>
+
+{% if order.works %}
+<div class="section">
+    <div class="section-title">Гарантийные работы</div>
+    <table>
+        <thead>
+        <tr>
+            <th style="width:30px">#</th>
+            <th>Наименование работ</th>
+            <th>Мастер</th>
+            <th class="text-end" style="width:80px">Н/ч</th>
+            <th class="text-end" style="width:100px">Стоимость</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for w in order.works %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ w.name }}</td>
+                <td>{{ w.master or "" }}</td>
+                <td class="text-end">{{ "%.2f"|format(w.hours or 0) }}</td>
+                <td class="text-end">{{ "%.2f"|format(w.price or 0) }} ₽</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="warranty-box">
+    <div class="warranty-title">Гарантия: {{ s.warranty_days or 14 }} дней</div>
+    <div>
+        Исполнитель гарантирует качество выполненных работ и использованных запчастей в течение
+        <strong>{{ s.warranty_days or 14 }} дней</strong> с момента подписания акта, при условии соблюдения владельцем
+        правил эксплуатации и рекомендаций сервиса.
+    </div>
+    <div style="margin-top: 8px;">
+        <strong>Гарантия не распространяется</strong> на:
+        <ul style="margin: 4px 0 0 18px; padding: 0;">
+            <li>естественный износ деталей и расходных материалов;</li>
+            <li>повреждения, возникшие в результате ДТП или неправильной эксплуатации;</li>
+            <li>самостоятельное вмешательство в узлы после выполнения работ.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-title">Условия обращения по гарантии</div>
+    <div>
+        Для обращения по гарантии необходимо предъявить настоящий талон и документ, удостоверяющий личность.
+        Диагностика по гарантийному случаю проводится бесплатно. Если заявленная неисправность не является
+        гарантийным случаем, диагностика оплачивается по действующему прайсу сервиса.
+    </div>
+</div>
+
+<div class="signatures">
+    <div style="flex:1">
+        <div>Исполнитель ______________________________</div>
+        <div class="muted" style="margin-top: 4px;">{{ s.director or "подпись / расшифровка" }}</div>
+    </div>
+    <div style="flex:1">
+        <div>Владелец ______________________________</div>
+        <div class="muted" style="margin-top: 4px;">подпись / расшифровка</div>
+    </div>
+</div>
+
+{% if s.footer_note %}
+    <div class="section muted" style="font-size: 11px;">{{ s.footer_note }}</div>
+{% endif %}
+{% endblock %}

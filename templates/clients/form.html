@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Редактирование клиента" if client else "Новый клиент" }} — АвтоСервис{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('clients_list') }}">Клиенты</a></li>
+        <li class="breadcrumb-item active">
+            {{ "Редактирование" if client else "Новый клиент" }}
+        </li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-4">
+    {{ "Редактирование клиента" if client else "Новый клиент" }}
+</h1>
+
+<div class="card stat-card">
+    <div class="card-body">
+        <form method="post" novalidate>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">ФИО <span class="text-danger">*</span></label>
+                    <input type="text" name="full_name" class="form-control"
+                           value="{{ form.get('full_name', client.full_name if client else '') }}"
+                           required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Телефон <span class="text-danger">*</span></label>
+                    <input type="text" name="phone" class="form-control"
+                           value="{{ form.get('phone', client.phone if client else '') }}"
+                           placeholder="+7 ___ ___-__-__" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control"
+                           value="{{ form.get('email', client.email if client else '') }}">
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label">Комментарий</label>
+                    <textarea name="comment" rows="3" class="form-control">{{ form.get('comment', client.comment if client else '') }}</textarea>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2"></i> Сохранить
+                </button>
+                <a href="{{ url_for('client_detail', client_id=client.id) if client else url_for('clients_list') }}"
+                   class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

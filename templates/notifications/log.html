@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Уведомления — АвтоСервис{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Журнал уведомлений</h1>
+</div>
+
+<div class="card stat-card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>Дата</th>
+                <th>Телефон</th>
+                <th>Сообщение</th>
+                <th>Провайдер</th>
+                <th>Статус</th>
+                <th>Заказ</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for log in logs %}
+                <tr>
+                    <td>{{ log.created_at.strftime("%d.%m.%Y %H:%M") }}</td>
+                    <td>{{ log.phone }}</td>
+                    <td><small>{{ log.message[:80] }}{% if log.message|length > 80 %}...{% endif %}</small></td>
+                    <td>{{ log.provider or "—" }}</td>
+                    <td>
+                        {% if log.status == 'sent' %}
+                            <span class="badge bg-success">отправлено</span>
+                        {% else %}
+                            <span class="badge bg-danger" title="{{ log.error or '' }}">ошибка</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.order_id %}
+                            <a href="{{ url_for('order_detail', order_id=log.order_id) }}">#{{ log.order_id }}</a>
+                        {% else %}—{% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="text-center text-muted py-4">Уведомлений пока нет.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

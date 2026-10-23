@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Редактирование поставщика" if supplier else "Новый поставщик" }} — АвтоСервис{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('parts_list') }}">Склад</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('suppliers_list') }}">Поставщики</a></li>
+        <li class="breadcrumb-item active">{{ "Редактирование" if supplier else "Новый" }}</li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-4">{{ "Редактирование поставщика" if supplier else "Новый поставщик" }}</h1>
+
+<div class="card stat-card">
+    <div class="card-body">
+        <form method="post" novalidate autocomplete="off">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label class="form-label">Название <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" required
+                           value="{{ form.get('name', supplier.name if supplier else '') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Контактное лицо</label>
+                    <input type="text" name="contact_person" class="form-control"
+                           value="{{ form.get('contact_person', supplier.contact_person if supplier and supplier.contact_person else '') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Телефон</label>
+                    <input type="text" name="phone" class="form-control"
+                           value="{{ form.get('phone', supplier.phone if supplier and supplier.phone else '') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control"
+                           value="{{ form.get('email', supplier.email if supplier and supplier.email else '') }}">
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label">Комментарий</label>
+                    <textarea name="comment" rows="3" class="form-control">{{ form.get('comment', supplier.comment if supplier and supplier.comment else '') }}</textarea>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2"></i> Сохранить
+                </button>
+                <a href="{{ url_for('suppliers_list') }}" class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

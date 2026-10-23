@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Зарплаты — АвтоСервис{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4">Зарплаты мастеров</h1>
+
+<form method="get" class="card stat-card mb-4">
+    <div class="card-body row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small">С даты</label>
+            <input type="date" name="from" value="{{ date_from }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">По дату</label>
+            <input type="date" name="to" value="{{ date_to }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-sm btn-primary">Показать</button>
+        </div>
+    </div>
+</form>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card h-100"><div class="card-body">
+            <div class="text-muted small">Сумма работ, ₽</div>
+            <div class="display-6">{{ "%.0f"|format(grand.works_sum) }}</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card h-100"><div class="card-body">
+            <div class="text-muted small">Нормо-часы</div>
+            <div class="display-6">{{ "%.1f"|format(grand.hours_sum) }}</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card h-100"><div class="card-body">
+            <div class="text-muted small">Оклады</div>
+            <div class="display-6">{{ "%.0f"|format(grand.base) }}</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card h-100 bg-light"><div class="card-body">
+            <div class="text-muted small">К выплате всего, ₽</div>
+            <div class="display-6 text-success">{{ "%.0f"|format(grand.total) }}</div>
+        </div></div>
+    </div>
+</div>
+
+<div class="card stat-card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>Мастер</th>
+                <th class="text-end">Работ</th>
+                <th class="text-end">Н/ч</th>
+                <th class="text-end">Сумма работ</th>
+                <th class="text-end">Оклад</th>
+                <th class="text-end">Переменная</th>
+                <th class="text-end">Итого</th>
+                <th class="text-end"></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for r in rows %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('master_detail', master_id=r.master.id) }}">
+                            {{ r.master.full_name }}
+                        </a>
+                    </td>
+                    <td class="text-end">{{ r.works_count }}</td>
+                    <td class="text-end">{{ "%.1f"|format(r.hours_sum) }}</td>
+                    <td class="text-end">{{ "%.2f"|format(r.works_sum) }} ₽</td>
+                    <td class="text-end">{{ "%.2f"|format(r.base) }} ₽</td>
+                    <td class="text-end">{{ "%.2f"|format(r.variable) }} ₽</td>
+                    <td class="text-end fw-bold">{{ "%.2f"|format(r.total) }} ₽</td>
+                    <td class="text-end">
+                        <a href="{{ url_for('master_salary', master_id=r.master.id, **{'from': date_from, 'to': date_to}) }}"
+                           class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="8" class="text-center text-muted py-4">Мастеров пока нет.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

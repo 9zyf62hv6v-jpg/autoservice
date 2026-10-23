@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}{{ part.name }} — АвтоСервис{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('parts_list') }}">Склад</a></li>
+        <li class="breadcrumb-item active">{{ part.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h1 class="h3 mb-1">
+            {{ part.title }}
+            {% if part.is_low %}
+                <span class="badge bg-warning text-dark align-middle">мало на складе</span>
+            {% endif %}
+        </h1>
+        <div class="text-muted small">
+            {% if part.sku %}Артикул: {{ part.sku }} &middot; {% endif %}
+            {% if part.supplier %}Поставщик: {{ part.supplier.name }} &middot; {% endif %}
+            Ед. изм.: {{ part.unit }}
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('part_edit', part_id=part.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil"></i> Изменить
+        </a>
+        <form method="post" action="{{ url_for('part_delete', part_id=part.id) }}"
+              onsubmit="return confirm('Удалить запчасть? История движений тоже удалится.');">
+            <button class="btn btn-outline-danger"><i class="bi bi-trash"></i> Удалить</button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card h-100"><div class="card-body">
+            <div class="text-muted small">Остаток</div>
+            <div class="display-6">
+                {{ part.stock or 0 }}
+                <small class="text-muted fs-6">{{ part.unit }}</small>
+            </div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card h-100"><div class="card-body">
+            <div class="text-muted small">Минимальный остаток</div>
+            <div>{{ part.min_stock or 0 }} {{ part.unit }}</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card h-100"><div class="card-body">
+            <div class="text-muted small">Закупочная цена</div>
+            <div>{{ "%.2f"|format(part.purchase_price or 0) }} ₽</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card h-100"><div class="card-body">
+            <div class="text-muted small">Розничная цена</div>
+            <div>{{ "%.2f"|format(part.price or 0) }} ₽</div>
+        </div></div>
+    </div>
+</div>
+
+{% if part.comment %}
+    <div class="card stat-card mb-4">
+        <div class="card-body">
+            <div class="text-muted small">Комментарий</div>
+            <div>{{ part.comment }}</div>
+        </div>
+    </div>
+{% endif %}
+
+<div class="card stat-card mb-4">
+    <div class="card-header bg-white"><strong>Добавить движение</strong></div>
+    <div class="card-body">
+        <form method="post" action="{{ url_for('part_movement', part_id=part.id) }}"
+              class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label small">Тип</label>
+                <select name="movement_type" class="form-select form-select-sm">
+                    {% for key, label in MOVEMENT_TYPES.items() %}
+                        <option value="{{ key }}" {% if key == 'in' %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Количество</label>
+                <input type="text" name="quantity" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Цена, ₽</label>
+                <input type="text" name="price" class="form-control form-control-sm" placeholder="0">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small">Комментарий</label>
+                <input type="text" name="comment" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-2 text-end">
+                <button class="btn btn-sm btn-primary w-100">
+                    <i class="bi bi-plus-lg"></i> Добавить
+                </button>
+            </div>
+        </form>
+        <div class="form-text mt-2">
+            Приход увеличивает остаток, расход уменьшает, корректировка устанавливает новое значение.
+        </div>
+    </div>
+</div>
+
+<div class="card stat-card">
+    <div class="card-header bg-white"><strong>История движений</strong></div>
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>Дата</th>
+                <th>Тип</th>
+                <th class="text-end">Количество</th>
+                <th class="text-end">Цена, ₽</th>
+                <th>Комментарий</th>
+                <th>Заказ</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for m in part.movements %}
+                <tr>
+                    <td>{{ m.created_at.strftime("%d.%m.%Y %H:%M") }}</td>
+                    <td>
+                        <span class="badge bg-{{ MOVEMENT_COLORS.get(m.movement_type, 'secondary') }}">
+                            {{ m.type_label }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        {% if m.movement_type == 'in' %}+{% elif m.movement_type == 'out' %}-{% endif %}{{ m.quantity or 0 }}
+                    </td>
+                    <td class="text-end">{{ "%.2f"|format(m.price or 0) }}</td>
+                    <td>{{ m.comment or "—" }}</td>
+                    <td>
+                        {% if m.order_id %}
+                            <a href="{{ url_for('order_detail', order_id=m.order_id) }}">#{{ m.order_id }}</a>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="text-center text-muted py-3">Движений пока нет.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

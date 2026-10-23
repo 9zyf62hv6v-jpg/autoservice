@@ -1,0 +1,115 @@
+{% extends "base_print.html" %}
+{% block title %}Счёт №{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div class="company">
+        {% if s.logo_filename %}
+            <img class="logo" src="{{ url_for('uploads_file', filename=s.logo_filename) }}" alt="">
+        {% endif %}
+        <div>
+            <h2>{{ s.company_name or "АвтоСервис" }}</h2>
+            <div class="muted">
+                {% if s.legal_name %}{{ s.legal_name }}<br>{% endif %}
+                {% if s.inn %}ИНН {{ s.inn }}{% endif %}
+                {% if s.ogrn %} &middot; ОГРН {{ s.ogrn }}{% endif %}
+                {% if s.address %}<br>{{ s.address }}{% endif %}
+                {% if s.phone %}<br>Тел.: {{ s.phone }}{% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="doc-title">
+        <h1>Счёт на оплату №{{ order.id }}</h1>
+        <div class="muted">от {{ (order.closed_at or order.created_at).strftime("%d.%m.%Y") }}</div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="kv">
+        <div>Поставщик:</div><div>{{ s.legal_name or s.company_name or "АвтоСервис" }}
+            {% if s.inn %}, ИНН {{ s.inn }}{% endif %}</div>
+        <div>Покупатель:</div><div>{{ order.client.full_name }}{% if order.client.phone %}, тел. {{ order.client.phone }}{% endif %}</div>
+    </div>
+</div>
+
+<div class="section">
+    <table>
+        <thead>
+        <tr>
+            <th style="width:30px">#</th>
+            <th>Наименование</th>
+            <th class="text-end" style="width:60px">Кол-во</th>
+            <th class="text-end" style="width:90px">Цена</th>
+            <th class="text-end" style="width:100px">Сумма</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% set ns = namespace(idx=0) %}
+        {% for w in order.works %}
+            {% set ns.idx = ns.idx + 1 %}
+            <tr>
+                <td>{{ ns.idx }}</td>
+                <td>{{ w.name }} (работа)</td>
+                <td class="text-end">{{ "%.2f"|format(w.hours or 0) }} н/ч</td>
+                <td class="text-end"></td>
+                <td class="text-end">{{ "%.2f"|format(w.price or 0) }} ₽</td>
+            </tr>
+        {% endfor %}
+        {% for p in order.parts %}
+            {% set ns.idx = ns.idx + 1 %}
+            <tr>
+                <td>{{ ns.idx }}</td>
+                <td>{{ p.name }}</td>
+                <td class="text-end">{{ "%.2f"|format(p.quantity or 0) }}</td>
+                <td class="text-end">{{ "%.2f"|format(p.price or 0) }} ₽</td>
+                <td class="text-end">{{ "%.2f"|format(p.total) }} ₽</td>
+            </tr>
+        {% endfor %}
+        {% if ns.idx == 0 %}
+            <tr><td colspan="5" class="text-center muted">Позиции отсутствуют</td></tr>
+        {% endif %}
+        <tr>
+            <td colspan="4" class="text-end"><strong>Итого:</strong></td>
+            <td class="text-end"><strong>{{ "%.2f"|format(order.total) }} ₽</strong></td>
+        </tr>
+        {% if s.vat_rate and s.vat_rate > 0 %}
+            <tr>
+                <td colspan="4" class="text-end">В т.ч. НДС {{ "%.2f"|format(s.vat_rate) }}%:</td>
+                <td class="text-end">{{ "%.2f"|format(order.total * s.vat_rate / (100 + s.vat_rate)) }} ₽</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="4" class="text-end">НДС:</td><td class="text-end">без НДС</td></tr>
+        {% endif %}
+        <tr>
+            <td colspan="4" class="text-end"><strong>Всего к оплате:</strong></td>
+            <td class="text-end"><strong>{{ "%.2f"|format(order.total) }} ₽</strong></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="section">
+    <div class="section-title">Банковские реквизиты</div>
+    <div class="kv">
+        {% if s.bank_name %}<div>Банк:</div><div>{{ s.bank_name }}</div>{% endif %}
+        {% if s.bik %}<div>БИК:</div><div>{{ s.bik }}</div>{% endif %}
+        {% if s.account %}<div>Расчётный счёт:</div><div>{{ s.account }}</div>{% endif %}
+        {% if s.corr_account %}<div>Корр. счёт:</div><div>{{ s.corr_account }}</div>{% endif %}
+    </div>
+</div>
+
+<div class="signatures">
+    <div style="flex:1">
+        <div>Руководитель ______________________________</div>
+        <div class="muted" style="margin-top: 4px;">{{ s.director or "подпись / расшифровка" }}</div>
+    </div>
+    <div style="flex:1">
+        <div>Бухгалтер ______________________________</div>
+        <div class="muted" style="margin-top: 4px;">{{ s.accountant or "подпись / расшифровка" }}</div>
+    </div>
+</div>
+
+{% if s.footer_note %}
+    <div class="section muted" style="font-size: 11px;">{{ s.footer_note }}</div>
+{% endif %}
+{% endblock %}

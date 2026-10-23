@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Настройки — АвтоСервис{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4">Настройки сервиса</h1>
+
+<form method="post" enctype="multipart/form-data" novalidate>
+
+    <div class="card stat-card mb-4">
+        <div class="card-header bg-white"><strong>Логотип</strong></div>
+        <div class="card-body row g-3 align-items-center">
+            <div class="col-md-3">
+                {% if s.logo_filename %}
+                    <img src="{{ url_for('uploads_file', filename=s.logo_filename) }}"
+                         alt="Логотип" style="max-width: 180px; max-height: 100px;">
+                {% else %}
+                    <div class="text-muted">Логотип не загружен</div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Загрузить логотип (PNG/JPG, до 500 КБ)</label>
+                <input type="file" name="logo" class="form-control" accept="image/*">
+                <div class="form-text">Появится во всех печатных документах.</div>
+            </div>
+            <div class="col-md-3">
+                {% if s.logo_filename %}
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="clear_logo" value="1" id="clear-logo">
+                        <label class="form-check-label" for="clear-logo">Удалить логотип</label>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card stat-card mb-4">
+        <div class="card-header bg-white"><strong>Общие данные</strong></div>
+        <div class="card-body row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Название (короткое)</label>
+                <input type="text" name="company_name" class="form-control" value="{{ s.company_name or '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Полное наименование (ИП/ООО)</label>
+                <input type="text" name="legal_name" class="form-control" value="{{ s.legal_name or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">ИНН</label>
+                <input type="text" name="inn" class="form-control" value="{{ s.inn or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">ОГРН / ОГРНИП</label>
+                <input type="text" name="ogrn" class="form-control" value="{{ s.ogrn or '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Адрес</label>
+                <input type="text" name="address" class="form-control" value="{{ s.address or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Телефон</label>
+                <input type="text" name="phone" class="form-control" value="{{ s.phone or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" value="{{ s.email or '' }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Руководитель</label>
+                <input type="text" name="director" class="form-control" value="{{ s.director or '' }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Главный бухгалтер</label>
+                <input type="text" name="accountant" class="form-control" value="{{ s.accountant or '' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Ставка НДС, %</label>
+                <input type="text" name="vat_rate" class="form-control" value="{{ s.vat_rate or 0 }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Гарантия, дней</label>
+                <input type="number" name="warranty_days" class="form-control" min="0"
+                       value="{{ s.warranty_days or 14 }}">
+            </div>
+        </div>
+    </div>
+
+    <div class="card stat-card mb-4">
+        <div class="card-header bg-white"><strong>Банковские реквизиты</strong></div>
+        <div class="card-body row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Банк</label>
+                <input type="text" name="bank_name" class="form-control" value="{{ s.bank_name or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">БИК</label>
+                <input type="text" name="bik" class="form-control" value="{{ s.bik or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Расчётный счёт</label>
+                <input type="text" name="account" class="form-control" value="{{ s.account or '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Корр. счёт</label>
+                <input type="text" name="corr_account" class="form-control" value="{{ s.corr_account or '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Примечание внизу документов</label>
+                <input type="text" name="footer_note" class="form-control"
+                       placeholder="Гарантия N дней, оплата в течение 3 банковских дней"
+                       value="{{ s.footer_note or '' }}">
+            </div>
+        </div>
+    </div>
+
+    <div class="card stat-card mb-4">
+        <div class="card-header bg-white"><strong>SMS-уведомления</strong></div>
+        <div class="card-body row g-3">
+            <div class="col-md-4">
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" name="sms_enabled" value="1"
+                           id="sms-enabled" {% if s.sms_enabled %}checked{% endif %}>
+                    <label class="form-check-label" for="sms-enabled">Включить отправку SMS</label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Провайдер</label>
+                <select name="sms_provider" class="form-select">
+                    <option value="smsru" {% if s.sms_provider == 'smsru' %}selected{% endif %}>SMS.RU</option>
+                    <option value="smsaero" {% if s.sms_provider == 'smsaero' %}selected{% endif %}>SMS Aero</option>
+                    <option value="bytehand" {% if s.sms_provider == 'bytehand' %}selected{% endif %}>Bytehand</option>
+                    <option value="iqsms" {% if s.sms_provider == 'iqsms' %}selected{% endif %}>iqsms</option>
+                    <option value="gosms" {% if s.sms_provider == 'gosms' %}selected{% endif %}>GoSMS.ru</option>
+                    <option value="smsc" {% if s.sms_provider == 'smsc' %}selected{% endif %}>SMSC.ru</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Имя отправителя (подпись)</label>
+                <input type="text" name="sms_sender" class="form-control"
+                       placeholder="Например, AVTOSERVIS" value="{{ s.sms_sender or '' }}">
+            </div>
+
+            <div class="col-12"><hr class="my-2"></div>
+            <div class="col-12"><small class="text-muted">Заполните поля для выбранного провайдера:</small></div>
+
+            <div class="col-md-3">
+                <label class="form-label small">API ID (SMS.RU)</label>
+                <input type="text" name="sms_api_id" class="form-control" value="{{ s.sms_api_id or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Email (SMS Aero)</label>
+                <input type="text" name="sms_email" class="form-control" value="{{ s.sms_email or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">API Key (SMS Aero, GoSMS)</label>
+                <input type="text" name="sms_api_key" class="form-control" value="{{ s.sms_api_key or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Логин (Bytehand, iqsms, SMSC)</label>
+                <input type="text" name="sms_login" class="form-control" value="{{ s.sms_login or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Пароль (Bytehand, iqsms, SMSC)</label>
+                <input type="text" name="sms_password" class="form-control" value="{{ s.sms_password or '' }}">
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check2"></i> Сохранить
+    </button>
+</form>
+{% endblock %}

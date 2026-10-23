@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Редактирование запчасти" if part else "Новая запчасть" }} — АвтоСервис{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('parts_list') }}">Склад</a></li>
+        <li class="breadcrumb-item active">
+            {{ "Редактирование" if part else "Новая запчасть" }}
+        </li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-4">
+    {{ "Редактирование запчасти" if part else "Новая запчасть" }}
+</h1>
+
+<div class="card stat-card">
+    <div class="card-body">
+        <form method="post" novalidate autocomplete="off">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Артикул</label>
+                    <input type="text" name="sku" class="form-control"
+                           value="{{ form.get('sku', part.sku if part and part.sku else '') }}">
+                </div>
+                <div class="col-md-9">
+                    <label class="form-label">Наименование <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" required
+                           value="{{ form.get('name', part.name if part else '') }}">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Производитель</label>
+                    <input type="text" name="brand" class="form-control"
+                           value="{{ form.get('brand', part.brand if part and part.brand else '') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Единица измерения</label>
+                    <input type="text" name="unit" class="form-control" placeholder="шт / л / м"
+                           value="{{ form.get('unit', part.unit if part and part.unit else 'шт') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Поставщик</label>
+                    {% set current_supplier = form.get('supplier_id', part.supplier_id if part else '')|string %}
+                    <select name="supplier_id" class="form-select">
+                        <option value="">— не выбран —</option>
+                        {% for s in suppliers %}
+                            <option value="{{ s.id }}"
+                                    {% if current_supplier == s.id|string %}selected{% endif %}>
+                                {{ s.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Закупочная цена, ₽</label>
+                    <input type="text" name="purchase_price" class="form-control"
+                           value="{{ form.get('purchase_price', part.purchase_price if part and part.purchase_price is not none else '') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Розничная цена, ₽</label>
+                    <input type="text" name="price" class="form-control"
+                           value="{{ form.get('price', part.price if part and part.price is not none else '') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Минимальный остаток</label>
+                    <input type="text" name="min_stock" class="form-control"
+                           value="{{ form.get('min_stock', part.min_stock if part and part.min_stock is not none else '') }}">
+                </div>
+
+                {% if not part %}
+                    <div class="col-md-3">
+                        <label class="form-label">Начальный остаток</label>
+                        <input type="text" name="stock" class="form-control" placeholder="0"
+                               value="{{ form.get('stock', '') }}">
+                        <div class="form-text">Создаст движение «Приход».</div>
+                    </div>
+                {% else %}
+                    <div class="col-md-3">
+                        <label class="form-label">Текущий остаток</label>
+                        <input type="text" class="form-control" value="{{ part.stock or 0 }}" disabled>
+                        <div class="form-text">Меняется только через движения.</div>
+                    </div>
+                {% endif %}
+
+                <div class="col-md-12">
+                    <label class="form-label">Комментарий</label>
+                    <textarea name="comment" rows="3" class="form-control">{{ form.get('comment', part.comment if part and part.comment else '') }}</textarea>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2"></i> Сохранить
+                </button>
+                <a href="{{ url_for('part_detail', part_id=part.id) if part else url_for('parts_list') }}"
+                   class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

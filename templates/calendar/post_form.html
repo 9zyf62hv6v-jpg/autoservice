@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Редактирование поста" if post else "Новый пост" }} — АвтоСервис{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('calendar_view') }}">Календарь</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('posts_list') }}">Посты</a></li>
+        <li class="breadcrumb-item active">{{ "Редактирование" if post else "Новый" }}</li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-4">{{ "Редактирование поста" if post else "Новый пост" }}</h1>
+
+<div class="card stat-card">
+    <div class="card-body">
+        <form method="post" novalidate autocomplete="off">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label class="form-label">Название <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" required
+                           value="{{ form.get('name', post.name if post else '') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Порядок</label>
+                    <input type="number" name="sort_order" class="form-control"
+                           value="{{ form.get('sort_order', post.sort_order if post else 0) }}">
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Описание</label>
+                    <input type="text" name="description" class="form-control"
+                           placeholder="Подъёмник, бокс, зона электрики..."
+                           value="{{ form.get('description', post.description if post and post.description else '') }}">
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="is-active"
+                               value="1" {% if (post and post.is_active) or not post %}checked{% endif %}>
+                        <label class="form-check-label" for="is-active">Активен</label>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2"></i> Сохранить
+                </button>
+                <a href="{{ url_for('posts_list') }}" class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

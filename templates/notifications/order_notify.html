@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Уведомить клиента — заказ #{{ order.id }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('orders_list') }}">Заказ-наряды</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('order_detail', order_id=order.id) }}">#{{ order.id }}</a></li>
+        <li class="breadcrumb-item active">Уведомить клиента</li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-4">Уведомить клиента</h1>
+
+{% if not settings.sms_enabled %}
+    <div class="alert alert-warning">
+        SMS-уведомления отключены. <a href="{{ url_for('settings_page') }}">Включите их в настройках</a>.
+    </div>
+{% endif %}
+
+<div class="card stat-card">
+    <div class="card-body">
+        <form method="post" novalidate>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Клиент</label>
+                    <input type="text" class="form-control" value="{{ order.client.full_name }}" disabled>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Телефон</label>
+                    <input type="text" name="phone" class="form-control" value="{{ order.client.phone }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Шаблон</label>
+                    <select name="template" class="form-select" id="template-select">
+                        <option value="">— выбрать —</option>
+                        {% for t in default_templates %}
+                            <option value="{{ t.text }}">{{ t.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Текст сообщения</label>
+                    <textarea name="message" id="message-text" rows="5" class="form-control" required>{{ default_templates[0].text if default_templates else '' }}</textarea>
+                    <div class="form-text">
+                        Переменные: <code>{client_name}</code>, <code>{car}</code>, <code>{order_id}</code>,
+                        <code>{total}</code>, <code>{company}</code>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send"></i> Отправить
+                </button>
+                <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const select = document.getElementById('template-select');
+    const textarea = document.getElementById('message-text');
+    select.addEventListener('change', function () {
+        if (select.value) textarea.value = select.value;
+    });
+});
+</script>
+{% endblock %}

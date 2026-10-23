@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Редактирование мастера" if master else "Новый мастер" }} — АвтоСервис{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('masters_list') }}">Мастера</a></li>
+        <li class="breadcrumb-item active">{{ "Редактирование" if master else "Новый мастер" }}</li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-4">{{ "Редактирование мастера" if master else "Новый мастер" }}</h1>
+
+<div class="card stat-card">
+    <div class="card-body">
+        <form method="post" novalidate autocomplete="off">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">ФИО <span class="text-danger">*</span></label>
+                    <input type="text" name="full_name" class="form-control" required
+                           value="{{ form.get('full_name', master.full_name if master else '') }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Специализация</label>
+                    <input type="text" name="specialization" class="form-control"
+                           placeholder="Двигатель, электрика, кузов..."
+                           value="{{ form.get('specialization', master.specialization if master and master.specialization else '') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Телефон</label>
+                    <input type="text" name="phone" class="form-control"
+                           value="{{ form.get('phone', master.phone if master and master.phone else '') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control"
+                           value="{{ form.get('email', master.email if master and master.email else '') }}">
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="is-active"
+                               value="1" {% if (master and master.is_active) or not master %}checked{% endif %}>
+                        <label class="form-check-label" for="is-active">Активен</label>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Ставка за нормо-час, ₽</label>
+                    <input type="text" name="hourly_rate" class="form-control"
+                           value="{{ form.get('hourly_rate', master.hourly_rate if master and master.hourly_rate is not none else '') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Процент от работ, %</label>
+                    <input type="text" name="percent" class="form-control"
+                           value="{{ form.get('percent', master.percent if master and master.percent is not none else '') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Оклад в месяц, ₽</label>
+                    <input type="text" name="salary_base" class="form-control"
+                           value="{{ form.get('salary_base', master.salary_base if master and master.salary_base is not none else '') }}">
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Комментарий</label>
+                    <textarea name="comment" rows="3" class="form-control">{{ form.get('comment', master.comment if master and master.comment else '') }}</textarea>
+                </div>
+            </div>
+
+            <div class="alert alert-light border mt-3 mb-0">
+                <strong>Как считается зарплата за период:</strong>
+                оклад + <em>максимум из двух</em>:
+                «процент от суммы работ» или «ставка × нормо-часы».
+                Если у мастера заполнено только одно из двух — считается оно.
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2"></i> Сохранить
+                </button>
+                <a href="{{ url_for('master_detail', master_id=master.id) if master else url_for('masters_list') }}"
+                   class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

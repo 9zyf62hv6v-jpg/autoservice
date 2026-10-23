@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+{% block title %}Заказ-наряд #{{ order.id }} — АвтоСервис{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('orders_list') }}">Заказ-наряды</a></li>
+        <li class="breadcrumb-item active">#{{ order.id }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">
+            Заказ-наряд #{{ order.id }}
+            <span class="badge bg-{{ STATUS_COLORS.get(order.status, 'secondary') }} align-middle">
+                {{ order.status_label }}
+            </span>
+        </h1>
+        <div class="text-muted">
+            Создан {{ order.created_at.strftime("%d.%m.%Y %H:%M") }}
+            {% if order.closed_at %} &middot; Закрыт {{ order.closed_at.strftime("%d.%m.%Y %H:%M") }}{% endif %}
+        </div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{{ url_for('order_notify', order_id=order.id) }}" class="btn btn-primary">
+            <i class="bi bi-chat-dots"></i> Уведомить клиента
+        </a>
+        <a href="{{ url_for('print_order', order_id=order.id) }}" target="_blank" class="btn btn-outline-secondary">
+            <i class="bi bi-printer"></i> Заказ-наряд
+        </a>
+        <a href="{{ url_for('print_act', order_id=order.id) }}" target="_blank" class="btn btn-outline-secondary">
+            <i class="bi bi-file-earmark-text"></i> Акт
+        </a>
+        <a href="{{ url_for('print_invoice', order_id=order.id) }}" target="_blank" class="btn btn-outline-secondary">
+            <i class="bi bi-receipt"></i> Счёт
+        </a>
+        <a href="{{ url_for('print_warranty', order_id=order.id) }}" target="_blank" class="btn btn-outline-secondary">
+            <i class="bi bi-shield-check"></i> Гарантия
+        </a>
+        <a href="{{ url_for('order_edit', order_id=order.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil"></i> Изменить
+        </a>
+        <form method="post" action="{{ url_for('order_delete', order_id=order.id) }}"
+              onsubmit="return confirm('Удалить заказ-наряд? Списанные запчасти вернутся на склад.');">
+            <button class="btn btn-outline-danger"><i class="bi bi-trash"></i> Удалить</button>
+        </form>
+    </div>
+</div>
+
+<div class="card stat-card mb-4">
+    <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+        <strong class="me-2">Статус:</strong>
+        <form method="post" action="{{ url_for('order_status', order_id=order.id) }}"
+              class="d-flex gap-2 align-items-center">
+            <select name="status" class="form-select form-select-sm" style="width:auto">
+                {% for key, label in ORDER_STATUSES.items() %}
+                    <option value="{{ key }}" {% if order.status == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-sm btn-primary">Применить</button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card stat-card h-100"><div class="card-body">
+            <h6 class="text-muted mb-2">Клиент</h6>
+            <div><a href="{{ url_for('client_detail', client_id=order.client.id) }}">{{ order.client.full_name }}</a></div>
+            <div class="text-muted small">
+                <i class="bi bi-telephone"></i> {{ order.client.phone }}
+                {% if order.client.email %}<br><i class="bi bi-envelope"></i> {{ order.client.email }}{% endif %}
+            </div>
+        </div></div>
+    </div>
+    <div class="col-md-6">
+        <div class="card stat-card h-100"><div class="card-body">
+            <h6 class="text-muted mb-2">Автомобиль</h6>
+            <div>{{ order.car.brand }} {{ order.car.model }}{% if order.car.year %} ({{ order.car.year }}){% endif %}</div>
+            <div class="text-muted small">
+                {% if order.car.plate %}Госномер: {{ order.car.plate }}<br>{% endif %}
+                {% if order.car.engine_volume %}Двигатель: {{ order.car.engine_volume }} л{% endif %}
+                {% if order.car.transmission %}{% if order.car.engine_volume %} &middot; {% endif %}КПП: {{ order.car.transmission }}{% endif %}
+            </div>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
+        <div class="text-muted small">Пробег при приёмке</div>
+        <div>{{ (order.intake_mileage ~ " км") if order.intake_mileage is not none else "—" }}</div>
+    </div></div></div>
+    <div class="col-md-9"><div class="card stat-card h-100"><div class="card-body">
+        <div class="text-muted small">Жалобы клиента</div>
+        <div>{{ order.complaint or "—" }}</div>
+    </div></div></div>
+</div>
+
+{% if order.notes %}
+    <div class="card stat-card mb-4"><div class="card-body">
+        <div class="text-muted small">Примечания</div>
+        <div>{{ order.notes }}</div>
+    </div></div>
+{% endif %}
+
+<!-- Работы -->
+<div class="card stat-card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <strong>Работы</strong>
+        <span class="text-muted small">Итого: {{ "%.2f"|format(order.total_works) }} ₽</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>#</th><th>Наименование</th><th>Мастер</th>
+                <th class="text-end">Н/ч</th><th class="text-end">Стоимость</th>
+                <th class="text-end">Действия</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for work in order.works %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ work.name }}</td>
+                    <td>
+                        {% if work.master_obj %}
+                            <a href="{{ url_for('master_detail', master_id=work.master_obj.id) }}">{{ work.master_obj.full_name }}</a>
+                        {% else %}{{ work.master or "—" }}{% endif %}
+                    </td>
+                    <td class="text-end">{{ "%.2f"|format(work.hours or 0) }}</td>
+                    <td class="text-end">{{ "%.2f"|format(work.price or 0) }} ₽</td>
+                    <td class="text-end">
+                        <div class="d-flex gap-1 justify-content-end">
+                            <button type="button" class="btn btn-sm btn-outline-secondary edit-work-btn"
+                                    data-id="{{ work.id }}" data-name="{{ work.name }}"
+                                    data-master-id="{{ work.master_id or '' }}"
+                                    data-hours="{{ work.hours or 0 }}" data-price="{{ work.price or 0 }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <form method="post" action="{{ url_for('order_work_delete', order_id=order.id, work_id=work.id) }}"
+                                  onsubmit="return confirm('Удалить работу?');">
+                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-x"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="text-center text-muted py-3">Работ пока нет.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-body border-top">
+        <form method="post" action="{{ url_for('order_work_add', order_id=order.id) }}" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small">Работа</label>
+                <input type="text" name="name" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Мастер</label>
+                <select name="master_id" class="form-select form-select-sm">
+                    <option value="">— не выбран —</option>
+                    {% for m in masters %}<option value="{{ m.id }}">{{ m.full_name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Нормо-часы</label>
+                <input type="text" name="hours" class="form-control form-control-sm" placeholder="0.0">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Стоимость, ₽</label>
+                <input type="text" name="price" class="form-control form-control-sm" placeholder="0">
+            </div>
+            <div class="col-md-1 text-end">
+                <button class="btn btn-sm btn-primary w-100"><i class="bi bi-plus-lg"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Запчасти -->
+<div class="card stat-card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <strong>Запчасти и материалы</strong>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="text-muted small">Итого: {{ "%.2f"|format(order.total_parts) }} ₽</span>
+            {% if order.parts_not_written_off %}
+                <form method="post" action="{{ url_for('order_write_off', order_id=order.id) }}"
+                      onsubmit="return confirm('Списать со склада все позиции, привязанные к номенклатуре?');">
+                    <button class="btn btn-sm btn-success">
+                        <i class="bi bi-box-arrow-up"></i> Списать со склада
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>#</th><th>Наименование</th>
+                <th class="text-end">Кол-во</th><th class="text-end">Цена, ₽</th>
+                <th class="text-end">Сумма, ₽</th><th>Склад</th>
+                <th class="text-end">Действия</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for part in order.parts %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ part.name }}</td>
+                    <td class="text-end">{{ "%.2f"|format(part.quantity or 0) }}</td>
+                    <td class="text-end">{{ "%.2f"|format(part.price or 0) }}</td>
+                    <td class="text-end">{{ "%.2f"|format(part.total) }}</td>
+                    <td>
+                        {% if part.stock_part %}
+                            {% if part.written_off %}<span class="badge bg-success">списано</span>
+                            {% else %}<span class="badge bg-warning text-dark">склад: {{ part.stock_part.stock or 0 }} {{ part.stock_part.unit }}</span>{% endif %}
+                        {% else %}<span class="badge bg-secondary">без склада</span>{% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="d-flex gap-1 justify-content-end">
+                            <button type="button" class="btn btn-sm btn-outline-secondary edit-part-btn"
+                                    data-id="{{ part.id }}" data-name="{{ part.name }}"
+                                    data-quantity="{{ part.quantity or 0 }}" data-price="{{ part.price or 0 }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <form method="post" action="{{ url_for('order_part_delete', order_id=order.id, part_id=part.id) }}"
+                                  onsubmit="return confirm('Удалить запчасть? {% if part.written_off %}Списание вернётся на склад.{% endif %}');">
+                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-x"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="7" class="text-center text-muted py-3">Запчастей пока нет.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-body border-top">
+        <form method="post" action="{{ url_for('order_part_add', order_id=order.id) }}"
+              class="row g-2 align-items-end" id="add-part-form" autocomplete="off">
+            <input type="hidden" name="part_id" id="new-part-id">
+            <div class="col-md-6">
+                <label class="form-label small">Наименование
+                    <small class="text-muted">— начните вводить, чтобы подставить со склада</small>
+                </label>
+                <input type="text" name="name" id="new-part-name" class="form-control form-control-sm"
+                       list="parts-datalist" placeholder="Название или артикул" required>
+                <datalist id="parts-datalist"></datalist>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Кол-во</label>
+                <input type="text" name="quantity" class="form-control form-control-sm" placeholder="1">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Цена, ₽</label>
+                <input type="text" name="price" id="new-part-price" class="form-control form-control-sm" placeholder="0">
+            </div>
+            <div class="col-md-2 text-end">
+                <button class="btn btn-sm btn-primary w-100"><i class="bi bi-plus-lg"></i> Добавить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Итого -->
+<div class="card stat-card">
+    <div class="card-body">
+        <div class="d-flex justify-content-between"><span>Работы:</span><strong>{{ "%.2f"|format(order.total_works) }} ₽</strong></div>
+        <div class="d-flex justify-content-between"><span>Запчасти:</span><strong>{{ "%.2f"|format(order.total_parts) }} ₽</strong></div>
+        <hr class="my-2">
+        <div class="d-flex justify-content-between fs-5"><span>Итого:</span><strong>{{ "%.2f"|format(order.total) }} ₽</strong></div>
+    </div>
+</div>
+
+<!-- Модалка работы -->
+<div class="modal fade" id="editWorkModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+    <form method="post" id="editWorkForm">
+        <div class="modal-header">
+            <h5 class="modal-title">Редактирование работы</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-3"><label class="form-label small">Работа <span class="text-danger">*</span></label>
+                <input type="text" name="name" id="editWorkName" class="form-control" required></div>
+            <div class="mb-3"><label class="form-label small">Мастер</label>
+                <select name="master_id" id="editWorkMasterId" class="form-select">
+                    <option value="">— не выбран —</option>
+                    {% for m in masters %}<option value="{{ m.id }}">{{ m.full_name }}</option>{% endfor %}
+                </select></div>
+            <div class="row g-2">
+                <div class="col-6"><label class="form-label small">Нормо-часы</label>
+                    <input type="text" name="hours" id="editWorkHours" class="form-control"></div>
+                <div class="col-6"><label class="form-label small">Стоимость, ₽</label>
+                    <input type="text" name="price" id="editWorkPrice" class="form-control"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+    </form>
+</div></div></div>
+
+<!-- Модалка запчасти -->
+<div class="modal fade" id="editPartModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+    <form method="post" id="editPartForm">
+        <div class="modal-header">
+            <h5 class="modal-title">Редактирование запчасти</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-3"><label class="form-label small">Наименование <span class="text-danger">*</span></label>
+                <input type="text" name="name" id="editPartName" class="form-control" required></div>
+            <div class="row g-2">
+                <div class="col-6"><label class="form-label small">Кол-во</label>
+                    <input type="text" name="quantity" id="editPartQuantity" class="form-control"></div>
+                <div class="col-6"><label class="form-label small">Цена, ₽</label>
+                    <input type="text" name="price" id="editPartPrice" class="form-control"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+    </form>
+</div></div></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const orderId = {{ order.id }};
+    const workModal = new bootstrap.Modal(document.getElementById('editWorkModal'));
+    document.querySelectorAll('.edit-work-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('editWorkForm').action = '/orders/' + orderId + '/works/' + this.dataset.id + '/edit';
+            document.getElementById('editWorkName').value = this.dataset.name || '';
+            document.getElementById('editWorkHours').value = this.dataset.hours || '';
+            document.getElementById('editWorkPrice').value = this.dataset.price || '';
+            document.getElementById('editWorkMasterId').value = this.dataset.masterId || '';
+            workModal.show();
+        });
+    });
+    const partModal = new bootstrap.Modal(document.getElementById('editPartModal'));
+    document.querySelectorAll('.edit-part-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('editPartForm').action = '/orders/' + orderId + '/parts/' + this.dataset.id + '/edit';
+            document.getElementById('editPartName').value = this.dataset.name || '';
+            document.getElementById('editPartQuantity').value = this.dataset.quantity || '';
+            document.getElementById('editPartPrice').value = this.dataset.price || '';
+            partModal.show();
+        });
+    });
+    const nameInput = document.getElementById('new-part-name');
+    const idInput = document.getElementById('new-part-id');
+    const priceInput = document.getElementById('new-part-price');
+    const datalist = document.getElementById('parts-datalist');
+    if (!nameInput) return;
+    let partsByTitle = {};
+    fetch('/api/parts/search').then(r => r.json()).then(function (data) {
+        datalist.innerHTML = '';
+        partsByTitle = {};
+        (data.parts || []).forEach(function (p) {
+            const title = p.title + (p.sku ? '  [' + p.sku + ']' : '');
+            partsByTitle[title] = p;
+            const opt = document.createElement('option');
+            opt.value = title;
+            opt.label = 'остаток ' + p.stock + ' ' + p.unit + ' · ' + p.price + ' ₽';
+            datalist.appendChild(opt);
+        });
+    }).catch(function (e) { console.warn('Склад: не удалось загрузить список', e); });
+    nameInput.addEventListener('input', function () {
+        const found = partsByTitle[nameInput.value];
+        if (found) {
+            idInput.value = found.id;
+            if (priceInput && (!priceInput.value || priceInput.value === '0')) priceInput.value = found.price;
+        } else idInput.value = '';
+    });
+});
+</script>
+{% endblock %}

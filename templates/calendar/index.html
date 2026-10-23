@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Календарь записи — АвтоСервис{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1 class="h3 mb-0">Календарь записи</h1>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{{ url_for('posts_list') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-columns-gap"></i> Посты
+        </a>
+        <a href="{{ url_for('appointment_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Новая запись
+        </a>
+    </div>
+</div>
+
+<div class="card stat-card mb-3">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('calendar_view', week=week_prev) }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-chevron-left"></i> Пред. неделя
+            </a>
+            <a href="{{ url_for('calendar_view') }}" class="btn btn-sm btn-outline-secondary">Сегодня</a>
+            <a href="{{ url_for('calendar_view', week=week_next) }}" class="btn btn-sm btn-outline-secondary">
+                След. неделя <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+        <div class="text-muted">
+            Неделя {{ monday.strftime("%d.%m.%Y") }} — {{ (monday.replace(day=monday.day) if false else days[-1]).strftime("%d.%m.%Y") }}
+        </div>
+    </div>
+</div>
+
+<div class="calendar-grid">
+    {% for d in days %}
+        {% set day_iso = d.isoformat() %}
+        <div class="calendar-col {% if d == today %}today{% endif %}"
+             data-date="{{ day_iso }}">
+            <div class="calendar-col-header">
+                <div class="day-name">{{ ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"][d.weekday()] }}</div>
+                <div class="day-date">{{ d.strftime("%d.%m") }}</div>
+            </div>
+            <div class="calendar-col-body" data-drop-target="1" data-date="{{ day_iso }}">
+                {% for a in by_day[day_iso] %}
+                    <div class="appt-card status-{{ a.status }}"
+                         draggable="true"
+                         data-appt-id="{{ a.id }}"
+                         data-date="{{ day_iso }}">
+                        <div class="appt-time">
+                            {{ a.start_at.strftime("%H:%M") }}–{{ a.end_at.strftime("%H:%M") }}
+                        </div>
+                        <div class="appt-title">
+                            {% if a.post %}<span class="badge bg-dark me-1">{{ a.post.name }}</span>{% endif %}
+                            {{ a.client.full_name }}
+                        </div>
+                        {% if a.car %}
+                            <div class="appt-sub">{{ a.car.brand }} {{ a.car.model }}
+                                {% if a.car.plate %} · {{ a.car.plate }}{% endif %}
+                            </div>
+                        {% endif %}
+                        {% if a.master %}
+                            <div class="appt-sub text-muted">
+                                <i class="bi bi-person-badge"></i> {{ a.master.full_name }}
+                            </div>
+                        {% endif %}
+                        <div class="appt-actions">
+                            <span class="badge bg-{{ APPOINTMENT_COLORS.get(a.status, 'secondary') }}">
+                                {{ a.status_label }}
+                            </span>
+                            <a href="{{ url_for('appointment_edit', appt_id=a.id) }}"
+                               class="btn btn-xs btn-outline-secondary"
+                               onclick="event.stopPropagation();">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% if a.order_id %}
+                                <a href="{{ url_for('order_detail', order_id=a.order_id) }}"
+                                   class="btn btn-xs btn-outline-primary" title="Заказ-наряд">
+                                    <i class="bi bi-clipboard-check"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="appt-empty">Пусто</div>
+                {% endfor %}
+            </div>
+            <div class="calendar-col-footer">
+                <a href="{{ url_for('appointment_new', date=day_iso) }}"
+                   class="btn btn-sm btn-outline-secondary w-100">
+                    <i class="bi bi-plus"></i> Добавить
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<style>
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+.calendar-col {
+    background: #fff;
+    border: 1px solid #e3e6ec;
+    border-radius: .75rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+}
+.calendar-col.today { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.15); }
+.calendar-col-header {
+    padding: .5rem .75rem;
+    border-bottom: 1px solid #eef0f4;
+    background: #f8f9fb;
+    border-radius: .75rem .75rem 0 0;
+    text-align: center;
+}
+.calendar-col-header .day-name { font-weight: 600; }
+.calendar-col-header .day-date { color: #6b7280; font-size: .85rem; }
+.calendar-col-body {
+    flex: 1;
+    padding: .5rem;
+    min-height: 200px;
+    overflow-y: auto;
+    transition: background-color .15s;
+}
+.calendar-col-body.drag-over { background: #eef4ff; }
+.appt-card {
+    background: #fff;
+    border: 1px solid #dfe3ea;
+    border-left: 4px solid #6b7280;
+    border-radius: .5rem;
+    padding: .4rem .5rem;
+    margin-bottom: .4rem;
+    font-size: .82rem;
+    cursor: grab;
+}
+.appt-card:active { cursor: grabbing; }
+.appt-card.dragging { opacity: .4; }
+.appt-card.status-planned { border-left-color: #6b7280; }
+.appt-card.status-confirmed { border-left-color: #0dcaf0; }
+.appt-card.status-in_progress { border-left-color: #0d6efd; }
+.appt-card.status-done { border-left-color: #198754; }
+.appt-card.status-canceled { border-left-color: #dc3545; opacity: .75; }
+.appt-time { font-weight: 600; color: #1f2937; }
+.appt-title { margin-top: 2px; }
+.appt-sub { color: #4b5563; font-size: .78rem; }
+.appt-actions {
+    margin-top: .35rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px;
+}
+.btn-xs { padding: 1px 5px; font-size: .7rem; line-height: 1; }
+.appt-empty { color: #9ca3af; font-size: .78rem; text-align: center; padding: .5rem 0; }
+.calendar-col-footer {
+    padding: .4rem .5rem;
+    border-top: 1px solid #eef0f4;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let dragged = null;
+
+    document.querySelectorAll('.appt-card').forEach(function (card) {
+        card.addEventListener('dragstart', function (e) {
+            dragged = card;
+            card.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', card.dataset.apptId);
+        });
+        card.addEventListener('dragend', function () {
+            card.classList.remove('dragging');
+            document.querySelectorAll('.calendar-col-body.drag-over').forEach(el => el.classList.remove('drag-over'));
+            dragged = null;
+        });
+    });
+
+    document.querySelectorAll('.calendar-col-body').forEach(function (zone) {
+        zone.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            zone.classList.add('drag-over');
+        });
+        zone.addEventListener('dragleave', function () {
+            zone.classList.remove('drag-over');
+        });
+        zone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            if (!dragged) return;
+
+            const apptId = dragged.dataset.apptId;
+            const newDate = zone.dataset.date;
+            const oldDate = dragged.dataset.date;
+            if (newDate === oldDate) return;
+
+            fetch('/appointments/' + apptId + '/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: newDate }),
+            })
+            .then(function (r) { return r.json().then(function (j) { return { status: r.status, body: j }; }); })
+            .then(function (res) {
+                if (res.status === 200 && res.body.ok) {
+                    window.location.reload();
+                } else if (res.status === 409) {
+                    alert('Конфликт: пост уже занят в это время.');
+                } else {
+                    alert('Не удалось перенести запись: ' + (res.body.error || 'ошибка'));
+                }
+            })
+            .catch(function () { alert('Ошибка сети.'); });
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Дашборд — АвтоСервис{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4">Дашборд</h1>
+
+<div class="row g-3">
+    <div class="col-md-3">
+        <div class="card stat-card"><div class="card-body">
+            <div class="text-muted">Клиентов в базе</div>
+            <div class="display-6">{{ stats.clients }}</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card"><div class="card-body">
+            <div class="text-muted">Автомобилей</div>
+            <div class="display-6">{{ stats.cars }}</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card"><div class="card-body">
+            <div class="text-muted">Открытых заказов</div>
+            <div class="display-6">{{ stats.open_orders }}</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card"><div class="card-body">
+            <div class="text-muted">Выручка (закрытые)</div>
+            <div class="display-6">{{ "%.0f"|format(stats.revenue) }} ₽</div>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-md-3">
+        <div class="card stat-card"><div class="card-body">
+            <div class="text-muted">Стоимость склада</div>
+            <div class="display-6">{{ "%.0f"|format(stats.stock_value) }} ₽</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card"><div class="card-body">
+            <div class="text-muted">Позиций мало на складе</div>
+            <div class="display-6">{{ stats.low_stock }}</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card"><div class="card-body">
+            <div class="text-muted">Мастеров в смене</div>
+            <div class="display-6">{{ stats.masters }}</div>
+        </div></div>
+    </div>
+</div>
+
+<div class="mt-4 d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('order_new') }}" class="btn btn-primary">
+        <i class="bi bi-clipboard-plus"></i> Новый заказ-наряд
+    </a>
+    <a href="{{ url_for('master_new') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-person-plus"></i> Добавить мастера
+    </a>
+    <a href="{{ url_for('part_new') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-plus-square"></i> Добавить запчасть
+    </a>
+    <a href="{{ url_for('salary_report') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-cash-stack"></i> Зарплаты
+    </a>
+</div>
+
+<div class="row g-3 mt-4">
+    <div class="col-lg-8">
+        <h2 class="h5 mb-3">Последние заказ-наряды</h2>
+        <div class="card stat-card">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Дата</th>
+                        <th>Клиент</th>
+                        <th>Автомобиль</th>
+                        <th>Статус</th>
+                        <th class="text-end">Сумма</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for order in recent_orders %}
+                        <tr>
+                            <td>#{{ order.id }}</td>
+                            <td>{{ order.created_at.strftime("%d.%m.%Y") }}</td>
+                            <td>{{ order.client.full_name }}</td>
+                            <td>{{ order.car.brand }} {{ order.car.model }}</td>
+                            <td>
+                                <span class="badge bg-{{ STATUS_COLORS.get(order.status, 'secondary') }}">
+                                    {{ order.status_label }}
+                                </span>
+                            </td>
+                            <td class="text-end">{{ "%.2f"|format(order.total) }} ₽</td>
+                            <td class="text-end">
+                                <a href="{{ url_for('order_detail', order_id=order.id) }}"
+                                   class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="7" class="text-center text-muted py-4">Заказ-нарядов пока нет.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <h2 class="h5 mb-3">Мало на складе</h2>
+        <div class="card stat-card">
+            <div class="card-body p-0">
+                {% if low_stock_parts %}
+                    <ul class="list-group list-group-flush">
+                        {% for p in low_stock_parts %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <a href="{{ url_for('part_detail', part_id=p.id) }}">{{ p.title }}</a>
+                                    <div class="text-muted small">мин. {{ p.min_stock }} {{ p.unit }}</div>
+                                </div>
+                                <span class="badge bg-{{ 'danger' if (p.stock or 0) <= 0 else 'warning' }}">
+                                    {{ p.stock or 0 }} {{ p.unit }}
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="p-4 text-center text-muted">Все запасы в норме.</div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-white text-end">
+                <a href="{{ url_for('parts_list', low='1') }}" class="btn btn-sm btn-outline-secondary">
+                    Все позиции
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Отчёты — АвтоСервис{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1 class="h3 mb-0">Отчёты и аналитика</h1>
+    <a href="{{ url_for('reports_export', **{'from': date_from, 'to': date_to}) }}"
+       class="btn btn-outline-secondary">
+        <i class="bi bi-file-earmark-excel"></i> Скачать CSV (Excel)
+    </a>
+</div>
+
+<form method="get" class="card stat-card mb-4">
+    <div class="card-body row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small">С даты</label>
+            <input type="date" name="from" value="{{ date_from }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">По дату</label>
+            <input type="date" name="to" value="{{ date_to }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-sm btn-primary">Показать</button>
+        </div>
+    </div>
+</form>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
+        <div class="text-muted small">Закрытых заказов</div>
+        <div class="display-6">{{ totals.orders }}</div>
+    </div></div></div>
+    <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
+        <div class="text-muted small">Выручка всего</div>
+        <div class="display-6">{{ "%.0f"|format(totals.revenue) }} ₽</div>
+        <div class="text-muted small">Работы: {{ "%.0f"|format(totals.works) }} ₽ · Запчасти: {{ "%.0f"|format(totals.parts) }} ₽</div>
+    </div></div></div>
+    <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
+        <div class="text-muted small">Средний чек</div>
+        <div class="display-6">{{ "%.0f"|format(totals.avg_check) }} ₽</div>
+    </div></div></div>
+    <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
+        <div class="text-muted small">Новых клиентов</div>
+        <div class="display-6">{{ totals.new_clients }}</div>
+    </div></div></div>
+</div>
+
+<div class="card stat-card mb-4">
+    <div class="card-header bg-white"><strong>Выручка по месяцам (последние 12)</strong></div>
+    <div class="card-body">
+        {% for m in monthly %}
+            <div class="mb-2">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span>{{ m.label }}</span>
+                    <span><strong>{{ "%.0f"|format(m.revenue) }} ₽</strong> · {{ m.orders }} зак.</span>
+                </div>
+                <div class="progress" style="height:8px;">
+                    <div class="progress-bar" style="width: {{ m.percent }}%;"></div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card stat-card h-100">
+            <div class="card-header bg-white"><strong>Топ услуг</strong></div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light">
+                    <tr><th>Услуга</th><th class="text-end">Кол-во</th><th class="text-end">Сумма, ₽</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for name, cnt, total in top_services %}
+                        <tr>
+                            <td>{{ name }}</td>
+                            <td class="text-end">{{ cnt }}</td>
+                            <td class="text-end">{{ "%.2f"|format(total) }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="3" class="text-center text-muted py-3">Нет данных.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card stat-card h-100">
+            <div class="card-header bg-white"><strong>Топ мастеров</strong></div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light">
+                    <tr><th>Мастер</th><th class="text-end">Работ</th><th class="text-end">Н/ч</th><th class="text-end">Сумма, ₽</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for name, cnt, hours, total in top_masters %}
+                        <tr>
+                            <td>{{ name }}</td>
+                            <td class="text-end">{{ cnt }}</td>
+                            <td class="text-end">{{ "%.1f"|format(hours) }}</td>
+                            <td class="text-end">{{ "%.2f"|format(total) }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4" class="text-center text-muted py-3">Нет данных.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card stat-card">
+            <div class="card-header bg-white"><strong>Топ запчастей и материалов</strong></div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light">
+                    <tr><th>Наименование</th><th class="text-end">Количество</th><th class="text-end">Сумма, ₽</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for name, qty, total in top_parts %}
+                        <tr>
+                            <td>{{ name }}</td>
+                            <td class="text-end">{{ "%.2f"|format(qty) }}</td>
+                            <td class="text-end">{{ "%.2f"|format(total) }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="3" class="text-center text-muted py-3">Нет данных.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends "base_print.html" %}
+{% block title %}Акт №{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div class="company">
+        {% if s.logo_filename %}
+            <img class="logo" src="{{ url_for('uploads_file', filename=s.logo_filename) }}" alt="">
+        {% endif %}
+        <div>
+            <h2>{{ s.company_name or "АвтоСервис" }}</h2>
+            <div class="muted">
+                {% if s.legal_name %}{{ s.legal_name }}<br>{% endif %}
+                {% if s.inn %}ИНН {{ s.inn }}{% endif %}
+                {% if s.address %}<br>{{ s.address }}{% endif %}
+                {% if s.phone %}<br>Тел.: {{ s.phone }}{% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="doc-title">
+        <h1>Акт выполненных работ №{{ order.id }}</h1>
+        <div class="muted">от {{ (order.closed_at or order.created_at).strftime("%d.%m.%Y") }}</div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="kv">
+        <div>Исполнитель:</div><div>{{ s.legal_name or s.company_name or "АвтоСервис" }}</div>
+        <div>Заказчик:</div><div>{{ order.client.full_name }}</div>
+        <div>Телефон заказчика:</div><div>{{ order.client.phone }}</div>
+        <div>Автомобиль:</div>
+        <div>{{ order.car.brand }} {{ order.car.model }}{% if order.car.year %}, {{ order.car.year }}{% endif %}
+            {% if order.car.plate %} ({{ order.car.plate }}){% endif %}</div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-title">Выполненные работы</div>
+    <table>
+        <thead>
+        <tr>
+            <th style="width:30px">#</th>
+            <th>Наименование работ</th>
+            <th>Мастер</th>
+            <th class="text-end" style="width:70px">Н/ч</th>
+            <th class="text-end" style="width:100px">Стоимость</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for w in order.works %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ w.name }}</td>
+                <td>{{ w.master or "" }}</td>
+                <td class="text-end">{{ "%.2f"|format(w.hours or 0) }}</td>
+                <td class="text-end">{{ "%.2f"|format(w.price or 0) }} ₽</td>
+            </tr>
+        {% endfor %}
+        {% if not order.works %}
+            <tr><td colspan="5" class="text-center muted">Работы отсутствуют</td></tr>
+        {% endif %}
+        </tbody>
+    </table>
+</div>
+
+{% if order.parts %}
+<div class="section">
+    <div class="section-title">Использованные запчасти и материалы</div>
+    <table>
+        <thead>
+        <tr>
+            <th style="width:30px">#</th>
+            <th>Наименование</th>
+            <th class="text-end" style="width:70px">Кол-во</th>
+            <th class="text-end" style="width:90px">Цена</th>
+            <th class="text-end" style="width:100px">Сумма</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for p in order.parts %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ p.name }}</td>
+                <td class="text-end">{{ "%.2f"|format(p.quantity or 0) }}</td>
+                <td class="text-end">{{ "%.2f"|format(p.price or 0) }} ₽</td>
+                <td class="text-end">{{ "%.2f"|format(p.total) }} ₽</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="section">
+    <table style="border: none;">
+        <tr style="border: none;">
+            <td style="border: none;"></td>
+            <td style="border: none; width: 340px;">
+                <div style="border: 1px solid #444; padding: 8px 10px;">
+                    <div style="display:flex; justify-content: space-between;"><span>Работы:</span><strong>{{ "%.2f"|format(order.total_works) }} ₽</strong></div>
+                    <div style="display:flex; justify-content: space-between;"><span>Запчасти:</span><strong>{{ "%.2f"|format(order.total_parts) }} ₽</strong></div>
+                    <hr style="margin: 6px 0;">
+                    <div style="display:flex; justify-content: space-between; font-size: 14px;"><span>ИТОГО:</span><strong>{{ "%.2f"|format(order.total) }} ₽</strong></div>
+                    {% if s.vat_rate and s.vat_rate > 0 %}
+                        <div class="muted" style="font-size: 11px; margin-top: 4px;">
+                            В т.ч. НДС {{ "%.2f"|format(s.vat_rate) }}%
+                        </div>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="section">
+    Работы выполнены в полном объёме и в срок. Заказчик претензий по объёму, качеству и срокам оказания услуг не имеет.
+</div>
+
+<div class="signatures">
+    <div style="flex:1">
+        <div>Исполнитель ______________________________</div>
+        <div class="muted" style="margin-top: 4px;">{{ s.director or "подпись / расшифровка" }}</div>
+    </div>
+    <div style="flex:1">
+        <div>Заказчик ______________________________</div>
+        <div class="muted" style="margin-top: 4px;">подпись / расшифровка</div>
+    </div>
+</div>
+
+{% if s.footer_note %}
+    <div class="section muted" style="font-size: 11px;">{{ s.footer_note }}</div>
+{% endif %}
+{% endblock %}

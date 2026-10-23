@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Редактирование заказ-наряда" if order else "Новый заказ-наряд" }} — АвтоСервис{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('orders_list') }}">Заказ-наряды</a></li>
+        <li class="breadcrumb-item active">
+            {{ ("#" ~ order.id) if order else "Новый" }}
+        </li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-4">
+    {{ ("Заказ-наряд #" ~ order.id) if order else "Новый заказ-наряд" }}
+</h1>
+
+<div class="card stat-card">
+    <div class="card-body">
+        <form method="post" novalidate autocomplete="off">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Клиент <span class="text-danger">*</span></label>
+                    <select name="client_id" id="client-select" class="form-select" required>
+                        <option value="">— выберите клиента —</option>
+                        {% set current_client = form.get('client_id', order.client_id if order else '')|string %}
+                        {% for c in clients %}
+                            <option value="{{ c.id }}"
+                                    {% if current_client == c.id|string %}selected{% endif %}>
+                                {{ c.full_name }} ({{ c.phone }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Автомобиль <span class="text-danger">*</span></label>
+                    <select name="car_id" id="car-select" class="form-select" required>
+                        <option value="">— сначала выберите клиента —</option>
+                    </select>
+                </div>
+
+                {% if order %}
+                    <div class="col-md-4">
+                        <label class="form-label">Статус</label>
+                        <select name="status" class="form-select">
+                            {% for key, label in ORDER_STATUSES.items() %}
+                                <option value="{{ key }}"
+                                        {% if order.status == key %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endif %}
+
+                <div class="col-md-4">
+                    <label class="form-label">Пробег при приёмке, км</label>
+                    <input type="number" name="intake_mileage" class="form-control" min="0"
+                           value="{{ form.get('intake_mileage', order.intake_mileage if order and order.intake_mileage is not none else '') }}">
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Жалобы клиента</label>
+                    <textarea name="complaint" rows="3" class="form-control">{{ form.get('complaint', order.complaint if order and order.complaint else '') }}</textarea>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label">Примечания</label>
+                    <textarea name="notes" rows="3" class="form-control">{{ form.get('notes', order.notes if order and order.notes else '') }}</textarea>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2"></i> Сохранить
+                </button>
+                <a href="{{ url_for('order_detail', order_id=order.id) if order else url_for('orders_list') }}"
+                   class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    const clientSelect = document.getElementById('client-select');
+    const carSelect    = document.getElementById('car-select');
+    const preselectedCarId = "{{ form.get('car_id', order.car_id if order else '') }}";
+
+    function loadCars() {
+        const clientId = clientSelect.value;
+        if (!clientId) {
+            carSelect.innerHTML = '<option value="">— сначала выберите клиента —</option>';
+            return;
+        }
+
+        carSelect.innerHTML = '<option value="">— загрузка... —</option>';
+
+        fetch('/api/clients/' + clientId + '/cars')
+            .then(r => r.json())
+            .then(function (data) {
+                carSelect.innerHTML = '<option value="">— выберите автомобиль —</option>';
+                (data.cars || []).forEach(function (car) {
+                    const opt = document.createElement('option');
+                    opt.value = car.id;
+                    let label = car.title;
+                    if (car.plate) label += ' · ' + car.plate;
+                    opt.textContent = label;
+                    if (preselectedCarId && String(car.id) === String(preselectedCarId)) {
+                        opt.selected = true;
+                    }
+                    carSelect.appendChild(opt);
+                });
+            })
+            .catch(function () {
+                carSelect.innerHTML = '<option value="">— ошибка загрузки —</option>';
+            });
+    }
+
+    clientSelect.addEventListener('change', loadCars);
+
+    if (clientSelect.value) {
+        loadCars();
+    }
+})();
+</script>
+{% endblock %}  

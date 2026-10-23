@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Редактирование автомобиля" if car else "Новый автомобиль" }} — АвтоСервис{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('clients_list') }}">Клиенты</a></li>
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('client_detail', client_id=client.id) }}">{{ client.full_name }}</a>
+        </li>
+        <li class="breadcrumb-item active">
+            {{ "Редактирование авто" if car else "Новый автомобиль" }}
+        </li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-4">
+    {{ "Редактирование автомобиля" if car else "Новый автомобиль" }}
+    <small class="text-muted">— {{ client.full_name }}</small>
+</h1>
+
+<div class="card stat-card">
+    <div class="card-body">
+        <form method="post" novalidate autocomplete="off">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Марка <span class="text-danger">*</span></label>
+                    <input type="text" name="brand" id="brand-input" class="form-control"
+                           list="brands-list" placeholder="Начните вводить, например: Toy"
+                           value="{{ form.get('brand', car.brand if car else '') }}" required>
+                    <datalist id="brands-list"></datalist>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Модель <span class="text-danger">*</span></label>
+                    <input type="text" name="model" id="model-input" class="form-control"
+                           list="models-list" placeholder="Сначала выберите марку"
+                           value="{{ form.get('model', car.model if car else '') }}" required>
+                    <datalist id="models-list"></datalist>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Объём двигателя, л</label>
+                    <input type="text" name="engine_volume" id="engine-input" class="form-control"
+                           list="engines-list" placeholder="Выберите модель"
+                           value="{{ form.get('engine_volume', car.engine_volume if car and car.engine_volume else '') }}">
+                    <datalist id="engines-list"></datalist>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">КПП</label>
+                    <input type="text" name="transmission" id="transmission-input" class="form-control"
+                           list="transmissions-list" placeholder="Выберите модель"
+                           value="{{ form.get('transmission', car.transmission if car and car.transmission else '') }}">
+                    <datalist id="transmissions-list"></datalist>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Год</label>
+                    <input type="number" name="year" class="form-control" min="1900" max="2100"
+                           value="{{ form.get('year', car.year if car and car.year else '') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Госномер</label>
+                    <input type="text" name="plate" class="form-control"
+                           value="{{ form.get('plate', car.plate if car and car.plate else '') }}">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">VIN</label>
+                    <input type="text" name="vin" class="form-control" maxlength="40"
+                           value="{{ form.get('vin', car.vin if car and car.vin else '') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Пробег, км</label>
+                    <input type="number" name="mileage" class="form-control" min="0"
+                           value="{{ form.get('mileage', car.mileage if car and car.mileage is not none else '') }}">
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label">Комментарий</label>
+                    <textarea name="comment" rows="3" class="form-control">{{ form.get('comment', car.comment if car and car.comment else '') }}</textarea>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2"></i> Сохранить
+                </button>
+                <a href="{{ url_for('client_detail', client_id=client.id) }}"
+                   class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    const brandInput   = document.getElementById('brand-input');
+    const brandList    = document.getElementById('brands-list');
+    const modelInput   = document.getElementById('model-input');
+    const modelList    = document.getElementById('models-list');
+    const engineInput  = document.getElementById('engine-input');
+    const engineList   = document.getElementById('engines-list');
+    const transInput   = document.getElementById('transmission-input');
+    const transList    = document.getElementById('transmissions-list');
+
+    let carsData  = {};   // { "Toyota": ["Camry", ...], ... }
+    let specsData = {};   // { "Toyota Camry": {"engines": [...], "transmissions": [...]}, ... }
+
+    function fillDatalist(datalist, values) {
+        datalist.innerHTML = '';
+        values.forEach(function (v) {
+            const opt = document.createElement('option');
+            opt.value = v;
+            datalist.appendChild(opt);
+        });
+    }
+
+    function fillBrands() {
+        fillDatalist(brandList, Object.keys(carsData).sort());
+    }
+
+    function fillModels() {
+        const typed = (brandInput.value || '').trim().toLowerCase();
+        let models = [];
+
+        if (typed && carsData[brandInput.value.trim()]) {
+            models = carsData[brandInput.value.trim()].slice();
+        } else if (typed) {
+            Object.keys(carsData).forEach(function (brand) {
+                if (brand.toLowerCase().includes(typed)) {
+                    models = models.concat(carsData[brand]);
+                }
+            });
+        } else {
+            Object.keys(carsData).forEach(function (brand) {
+                models = models.concat(carsData[brand]);
+            });
+        }
+
+        fillDatalist(modelList, Array.from(new Set(models)).sort());
+    }
+
+    function fillSpecs() {
+        const brand = (brandInput.value || '').trim();
+        const model = (modelInput.value || '').trim();
+        const key = (brand + ' ' + model).trim();
+        const spec = specsData[key];
+
+        if (spec) {
+            fillDatalist(engineList, spec.engines || []);
+            fillDatalist(transList,  spec.transmissions || []);
+        } else {
+            fillDatalist(engineList, []);
+            fillDatalist(transList,  []);
+        }
+    }
+
+    Promise.all([
+        fetch("{{ url_for('static', filename='data/cars.json') }}").then(r => r.json()),
+        fetch("{{ url_for('static', filename='data/car_specs.json') }}")
+            .then(r => r.ok ? r.json() : {})
+            .catch(() => ({}))
+    ]).then(function ([cars, specs]) {
+        carsData  = cars  || {};
+        specsData = specs || {};
+        fillBrands();
+        fillModels();
+        fillSpecs();
+
+        brandInput.addEventListener('input', function () {
+            fillModels();
+            fillSpecs();
+        });
+        brandInput.addEventListener('change', function () {
+            fillModels();
+            fillSpecs();
+        });
+        modelInput.addEventListener('input', fillSpecs);
+        modelInput.addEventListener('change', fillSpecs);
+    }).catch(function (err) {
+        console.warn('Не удалось загрузить справочники:', err);
+    });
+})();
+</script>
+{% endblock %}

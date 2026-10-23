@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Заказ-наряды — АвтоСервис{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Заказ-наряды</h1>
+    <a href="{{ url_for('order_new') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Создать
+    </a>
+</div>
+
+<div class="mb-3 d-flex flex-wrap gap-2">
+    <a href="{{ url_for('orders_list') }}"
+       class="btn btn-sm {% if not current_status %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        Все
+    </a>
+    {% for key, label in ORDER_STATUSES.items() %}
+        <a href="{{ url_for('orders_list', status=key) }}"
+           class="btn btn-sm {% if current_status == key %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            {{ label }}
+        </a>
+    {% endfor %}
+</div>
+
+<div class="card stat-card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Дата</th>
+                <th>Клиент</th>
+                <th>Автомобиль</th>
+                <th>Статус</th>
+                <th class="text-end">Работы</th>
+                <th class="text-end">Запчасти</th>
+                <th class="text-end">Итого</th>
+                <th class="text-end">Действия</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for order in orders %}
+                <tr>
+                    <td>#{{ order.id }}</td>
+                    <td>{{ order.created_at.strftime("%d.%m.%Y") }}</td>
+                    <td>
+                        <a href="{{ url_for('client_detail', client_id=order.client.id) }}">
+                            {{ order.client.full_name }}
+                        </a>
+                    </td>
+                    <td>
+                        {{ order.car.brand }} {{ order.car.model }}
+                        {% if order.car.plate %}
+                            <small class="text-muted">· {{ order.car.plate }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-{{ STATUS_COLORS.get(order.status, 'secondary') }}">
+                            {{ order.status_label }}
+                        </span>
+                    </td>
+                    <td class="text-end">{{ "%.2f"|format(order.total_works) }} ₽</td>
+                    <td class="text-end">{{ "%.2f"|format(order.total_parts) }} ₽</td>
+                    <td class="text-end fw-bold">{{ "%.2f"|format(order.total) }} ₽</td>
+                    <td class="text-end">
+                        <a href="{{ url_for('order_detail', order_id=order.id) }}"
+                           class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a>
+                        <a href="{{ url_for('order_edit', order_id=order.id) }}"
+                           class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-4">
+                        Заказ-нарядов пока нет.
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

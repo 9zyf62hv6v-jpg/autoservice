@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Документ{% endblock %}</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: "DejaVu Sans", Arial, sans-serif; color: #000; margin: 0; padding: 0; background: #fff; font-size: 13px; line-height: 1.35; }
+        .page { max-width: 800px; margin: 24px auto; padding: 32px 40px; background: #fff; box-shadow: 0 1px 8px rgba(0,0,0,.08); }
+        h1, h2, h3 { margin: 0 0 8px; }
+        h1 { font-size: 20px; }
+        h2 { font-size: 16px; }
+        h3 { font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+        th, td { border: 1px solid #444; padding: 4px 6px; font-size: 12px; vertical-align: top; }
+        th { background: #f2f2f2; text-align: left; }
+        .text-end { text-align: right; }
+        .text-center { text-align: center; }
+        .muted { color: #555; }
+        .row { display: flex; gap: 16px; }
+        .col { flex: 1; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; border-bottom: 1px solid #999; padding-bottom: 12px; margin-bottom: 16px; }
+        .company { max-width: 60%; display: flex; gap: 12px; align-items: flex-start; }
+        .company .logo { max-width: 90px; max-height: 90px; }
+        .doc-title { text-align: right; }
+        .doc-title h1 { margin: 0; font-size: 18px; }
+        .doc-title .muted { font-size: 11px; }
+        .section { margin-top: 14px; }
+        .section-title { font-weight: bold; margin-bottom: 6px; font-size: 13px; }
+        .kv { display: grid; grid-template-columns: 160px 1fr; gap: 4px 10px; font-size: 12px; }
+        .signatures { margin-top: 40px; display: flex; justify-content: space-between; gap: 40px; font-size: 12px; }
+        .no-print { text-align: center; margin: 12px 0; }
+        .no-print button { padding: 8px 16px; font-size: 13px; cursor: pointer; border: 1px solid #333; background: #f7f7f7; border-radius: 4px; margin-right: 8px; }
+        .warranty-box { border: 2px solid #333; padding: 14px; margin-top: 20px; }
+        .warranty-title { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 12px; }
+        @media print {
+            body { font-size: 12px; }
+            .page { box-shadow: none; margin: 0; padding: 0; max-width: none; }
+            .no-print { display: none; }
+            @page { size: A4; margin: 15mm 12mm; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button onclick="window.print()">Печать / PDF</button>
+        <button onclick="window.close()">Закрыть</button>
+    </div>
+    <div class="page">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
